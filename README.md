@@ -14,10 +14,12 @@ Esta organização está dividida em **Times**, onde cada equipe possui seu pró
 | :--- | :--- | :--- |
 | **[RACK+](https://github.com/turma-ipi-rubens/repo-rack-plus)** | Gestão de infraestrutura de TI e logs. | Caio Gomes |
 | **[EasyEnglish](https://github.com/turma-ipi-rubens/repo-easy-english)** | Extensão para aprendizado de inglês via YouTube. | Ricardo Meireles |
-| **[NexusNode](https://github.com/turma-ipi-rubens/repo-nexusnode)** | Painel de hospedagem de servidores (Docker). | Breno Reis |
-| **[AroMatch](https://github.com/turma-ipi-rubens/repo-aromatch)** | Recomendação personalizada de perfumes. | Geovane Silva |
+| **[NexusNode](https://github.com/turma-ipi-rubens/repo-nexusnode)** | Painel de hospedagem de servidores (Docker). | Evandro Perreira |
+| **[MyServer](https://github.com/turma-ipi-rubens/repo-myserver)** | Painel de hospedagem de servidores de jogos. | Breno Reis |
+| **[SkillEx](https://github.com/turma-ipi-rubens/repo-skillex)** | Vitrine de habilidaeds. | Geovane Silva |
 | **[EDU HUB](https://github.com/turma-ipi-rubens/repo-edu-hub)** | Sistema integrado de gestão escolar. | Anna Karolina |
 | **[ENLACE](https://github.com/turma-ipi-rubens/repo-enlace)** | Vitrine de talentos para o cenário competitivo gamer. | Victor Godoi |
+| **[AfroConnect](https://github.com/turma-ipi-rubens/repo-afroconnect)** | Vitrine de serviços para clientes Afro. | Gislane Rosa |
 
 ---
 
