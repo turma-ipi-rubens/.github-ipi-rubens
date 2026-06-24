@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: enlace_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=enlace_db
+      - POSTGRES_USER=enlace_user
+      - POSTGRES_PASSWORD=enlace_password
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    container_name: enlace_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://enlace_user:enlace_password@db:5432/enlace_db?schema=public
+      - JWT_SECRET=segredo_do_token_jwt
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=http://localhost:3000
+    container_name: enlace_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

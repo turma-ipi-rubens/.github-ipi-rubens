@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: repo-myserver_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=repo_myserver_db
+      - POSTGRES_USER=repo_myserver_user
+      - POSTGRES_PASSWORD=repo_myserver_password
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    container_name: repo-myserver_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SECRET_KEY=sua_chave_secreta_super_segura
+      - DJANGO_DEBUG=False
+      - DJANGO_ALLOWED_HOSTS=*
+      - DATABASE_URL=postgres://repo_myserver_user:repo_myserver_password@db:5432/repo_myserver_db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

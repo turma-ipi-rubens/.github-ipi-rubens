@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: rack_plus_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=rack_db
+      - POSTGRES_USER=rack_user
+      - POSTGRES_PASSWORD=rack_password
+
+  redis:
+    image: redis:7-alpine
+    container_name: rack_plus_redis
+    restart: always
+
+  web:
+    build: .
+    container_name: rack_plus_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SECRET_KEY=chave_de_producao_secreta
+      - DJANGO_DEBUG=False
+      - DATABASE_URL=postgres://rack_user:rack_password@db:5432/rack_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
