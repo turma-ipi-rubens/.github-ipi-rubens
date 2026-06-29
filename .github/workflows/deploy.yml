@@ -40,8 +40,10 @@ jobs:
 
       # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
       - name: Execute Deploy commands via SSH
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "export GH_PAT='$GH_PAT'; bash -s" << 'EOF'
             set -e
             cd ~/TCC
             
@@ -63,13 +65,14 @@ jobs:
               if [ -d "$target_dir" ]; then
                 echo "Updating existing repository $repo on branch $branch..."
                 cd "$target_dir"
+                git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git"
                 git fetch origin
                 git checkout "$branch"
                 git pull origin "$branch"
                 cd - > /dev/null
               else
                 echo "Repository $repo not found. Cloning from GitHub..."
-                git clone -b "$branch" "git@github.com:turma-ipi-rubens/$repo.git" "$target_dir"
+                git clone -b "$branch" "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git" "$target_dir"
               fi
             done
 
