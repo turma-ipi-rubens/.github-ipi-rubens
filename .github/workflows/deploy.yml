@@ -15,33 +15,31 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Setup SSH Key
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
       # Copiar arquivos de configuração essenciais para o Servidor via SCP (SSH)
       - name: Copy deployment configurations to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,init-multiple-databases.sh,docker-compose.env"
-          target: "/home/${{ secrets.SSH_USERNAME }}/TCC/"
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p /home/${{ secrets.SSH_USERNAME }}/TCC/"
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 docker-compose.yml init-multiple-databases.sh docker-compose.env ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USERNAME }}/TCC/
 
       # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
       - name: Execute Deploy commands via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd /home/${{ secrets.SSH_USERNAME }}/TCC
             
             # Garantir permissão de execução para o inicializador do banco
             chmod +x init-multiple-databases.sh
             
             # Configuração/Atualização de cada Repositório do Aluno
-            # Nota: O GitHub Actions rodando este script assume que a VM possui SSH-keys configuradas
-            # no GitHub para fazer pull seguro dos repositórios dos alunos, ou os repositórios são públicos.
-            
             declare -A repos=(
               ["repo-easy-english"]="deploy-gcp-rubens"
               ["repo-edu-hub"]="deploy-gcp-rubens"
@@ -70,3 +68,4 @@ jobs:
             
             # Limpeza rápida de imagens antigas/inutilizadas
             docker image prune -f
+          EOF
