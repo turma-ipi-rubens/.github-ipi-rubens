@@ -1,0 +1,73 @@
+name: Deploy Student TCCs to GCP VM
+
+on:
+  push:
+    branches:
+      - deploy-gcp-rubens
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to GCP VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Copiar arquivos de configuração essenciais para o Servidor via SCP (SSH)
+      - name: Copy deployment configurations to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,init-multiple-databases.sh,docker-compose.env"
+          target: "/home/${{ secrets.SSH_USERNAME }}/TCC/"
+
+      # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
+      - name: Execute Deploy commands via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME }}/TCC
+            
+            # Garantir permissão de execução para o inicializador do banco
+            chmod +x init-multiple-databases.sh
+            
+            # Configuração/Atualização de cada Repositório do Aluno
+            # Nota: O GitHub Actions rodando este script assume que a VM possui SSH-keys configuradas
+            # no GitHub para fazer pull seguro dos repositórios dos alunos, ou os repositórios são públicos.
+            
+            declare -A repos=(
+              ["repo-easy-english"]="deploy-gcp-rubens"
+              ["repo-edu-hub"]="deploy-gcp-rubens"
+              ["repo-enlace"]="deploy-gcp-rubens"
+              ["repo-myserver"]="deploy-gcp-rubens"
+              ["repo-rack-plus"]="deploy-gcp-rubens"
+              ["repo-skillex"]="deploy-gcp-rubens"
+            )
+
+            for repo in "${!repos[@]}"; do
+              branch="${repos[$repo]}"
+              if [ -d "$repo" ]; then
+                echo "Updating existing repository $repo on branch $branch..."
+                cd "$repo"
+                git fetch origin
+                git checkout "$branch"
+                git pull origin "$branch"
+                cd ..
+              else
+                echo "Repository $repo not found on VM. Please clone it manually or via automation first."
+              fi
+            done
+
+            # Subir o ambiente Docker Compose atualizado
+            docker-compose down
+            docker-compose up -d --build
+            
+            # Limpeza rápida de imagens antigas/inutilizadas
+            docker image prune -f

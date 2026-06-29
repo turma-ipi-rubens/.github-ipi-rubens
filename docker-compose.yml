@@ -1,0 +1,253 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # PROXY REVERSO TRAEFIK (SSL AUTOMÁTICO COM HTTPS)
+  # ==========================================
+  traefik:
+    image: traefik:v2.10
+    container_name: tcc-traefik-proxy
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirecionamento automático global de HTTP (80) para HTTPS (443)
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Configuração do Let's Encrypt para geração de certificados SSL gratuitos
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=admin@crcttec.com.br"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik_certs:/letsencrypt"
+    networks:
+      - tcc-network
+    restart: always
+
+  # ==========================================
+  # POSTGRESQL CENTRALIZADO (BANCO DE DADOS COMPARTILHADO)
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: tcc-postgres-central
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_MULTIPLE_DATABASES}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh:ro
+    networks:
+      - tcc-network
+    restart: always
+
+  # ==========================================
+  # REDIS CENTRALIZADO (COMPARTILHADO PARA CHANNELS/SOCKET.IO)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: tcc-redis-central
+    networks:
+      - tcc-network
+    restart: always
+
+  # ==========================================
+  # TCC 1: repo-easy-english
+  # ==========================================
+  easy-english:
+    build:
+      context: ../repo-easy-english
+      dockerfile: Dockerfile
+    container_name: tcc-easy-english
+    environment:
+      - DATABASE_URL=${EASY_ENGLISH_DB_URL}
+      - SECRET_KEY=${EASY_ENGLISH_SECRET_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.easyenglish.rule=Host(`easyenglish.crcttec.com.br`)"
+      - "traefik.http.routers.easyenglish.entrypoints=websecure"
+      - "traefik.http.routers.easyenglish.tls.certresolver=myresolver"
+      - "traefik.http.services.easyenglish.loadbalancer.server.port=8000"
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+    restart: always
+
+  # ==========================================
+  # TCC 2: repo-edu-hub (Com IA Gemini integrada)
+  # ==========================================
+  edu-hub:
+    build:
+      context: ../repo-edu-hub
+      dockerfile: Dockerfile
+    container_name: tcc-edu-hub
+    environment:
+      - DATABASE_URL=${EDUHUB_DB_URL}
+      - SECRET_KEY=${EDUHUB_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.eduhub.rule=Host(`eduhub.crcttec.com.br`)"
+      - "traefik.http.routers.eduhub.entrypoints=websecure"
+      - "traefik.http.routers.eduhub.tls.certresolver=myresolver"
+      - "traefik.http.services.eduhub.loadbalancer.server.port=8000"
+    volumes:
+      - eduhub_media:/app/media
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+    restart: always
+
+  # ==========================================
+  # TCC 3A: repo-enlace (Backend Node.js API)
+  # ==========================================
+  enlace-backend:
+    build:
+      context: ../repo-enlace/backend
+      dockerfile: Dockerfile
+    container_name: tcc-enlace-backend
+    environment:
+      - DATABASE_URL=${ENLACE_DATABASE_URL}
+      - JWT_SECRET=${ENLACE_JWT_SECRET}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.enlace-be.rule=Host(`enlace-api.crcttec.com.br`)"
+      - "traefik.http.routers.enlace-be.entrypoints=websecure"
+      - "traefik.http.routers.enlace-be.tls.certresolver=myresolver"
+      - "traefik.http.services.enlace-be.loadbalancer.server.port=3000"
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+    restart: always
+
+  # ==========================================
+  # TCC 3B: repo-enlace (Frontend React Estático)
+  # ==========================================
+  enlace-frontend:
+    build:
+      context: ../repo-enlace/frontend
+      dockerfile: Dockerfile
+    container_name: tcc-enlace-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.enlace-fe.rule=Host(`enlace.crcttec.com.br`)"
+      - "traefik.http.routers.enlace-fe.entrypoints=websecure"
+      - "traefik.http.routers.enlace-fe.tls.certresolver=myresolver"
+      - "traefik.http.services.enlace-fe.loadbalancer.server.port=80"
+    networks:
+      - tcc-network
+    restart: always
+
+  # ==========================================
+  # TCC 4: repo-myserver (Painel de Servidores)
+  # ==========================================
+  myserver:
+    build:
+      context: ../repo-myserver
+      dockerfile: Dockerfile
+    container_name: tcc-myserver
+    environment:
+      - DATABASE_URL=${MYSERVER_DB_URL}
+      - SECRET_KEY=${MYSERVER_SECRET_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myserver.rule=Host(`myserver.crcttec.com.br`)"
+      - "traefik.http.routers.myserver.entrypoints=websecure"
+      - "traefik.http.routers.myserver.tls.certresolver=myresolver"
+      - "traefik.http.services.myserver.loadbalancer.server.port=8000"
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+    restart: always
+
+  # ==========================================
+  # TCC 5: repo-rack-plus (ASGI Django Channels + WebSockets)
+  # ==========================================
+  rack-plus:
+    build:
+      context: ../repo-rack-plus
+      dockerfile: Dockerfile
+    container_name: tcc-rack-plus
+    environment:
+      - DATABASE_URL=${RACK_PLUS_DB_URL}
+      - SECRET_KEY=${RACK_PLUS_SECRET_KEY}
+      - REDIS_HOST=${RACK_PLUS_CHANNEL_LAYERS_REDIS_HOST}
+      - REDIS_PORT=${RACK_PLUS_CHANNEL_LAYERS_REDIS_PORT}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rackplus.rule=Host(`rackplus.crcttec.com.br`)"
+      - "traefik.http.routers.rackplus.entrypoints=websecure"
+      - "traefik.http.routers.rackplus.tls.certresolver=myresolver"
+      - "traefik.http.services.rackplus.loadbalancer.server.port=8000"
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
+  # ==========================================
+  # TCC 6A: repo-skillex (Backend API + Socket.io)
+  # ==========================================
+  skillex-backend:
+    build:
+      context: ../repo-skillex/backend
+      dockerfile: Dockerfile
+    container_name: tcc-skillex-backend
+    environment:
+      - DATABASE_URL=${SKILLEX_DATABASE_URL}
+      - JWT_SECRET=${SKILLEX_JWT_SECRET}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.skillex-be.rule=Host(`skillex-api.crcttec.com.br`)"
+      - "traefik.http.routers.skillex-be.entrypoints=websecure"
+      - "traefik.http.routers.skillex-be.tls.certresolver=myresolver"
+      - "traefik.http.services.skillex-be.loadbalancer.server.port=3333"
+    volumes:
+      - skillex_data:/app/data
+      - skillex_uploads:/app/uploads
+    networks:
+      - tcc-network
+    depends_on:
+      - postgres
+    restart: always
+
+  # ==========================================
+  # TCC 6B: repo-skillex (Frontend React PWA)
+  # ==========================================
+  skillex-frontend:
+    build:
+      context: ../repo-skillex/frontend
+      dockerfile: Dockerfile
+    container_name: tcc-skillex-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.skillex-fe.rule=Host(`skillex.crcttec.com.br`)"
+      - "traefik.http.routers.skillex-fe.entrypoints=websecure"
+      - "traefik.http.routers.skillex-fe.tls.certresolver=myresolver"
+      - "traefik.http.services.skillex-fe.loadbalancer.server.port=80"
+    networks:
+      - tcc-network
+    restart: always
+
+# Volumes para persistência de dados fora dos contêineres
+volumes:
+  traefik_certs:
+  postgres_data:
+  eduhub_media:
+  skillex_data:
+  skillex_uploads:
+
+networks:
+  tcc-network:
+    driver: bridge
