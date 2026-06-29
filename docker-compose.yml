@@ -72,6 +72,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.easyenglish.rule=Host(`easyenglish.crcttec.com.br`)"
       - "traefik.http.routers.easyenglish.entrypoints=websecure"
+      - "traefik.http.routers.easyenglish.tls=true"
       - "traefik.http.routers.easyenglish.tls.certresolver=myresolver"
       - "traefik.http.services.easyenglish.loadbalancer.server.port=8000"
     networks:
@@ -96,6 +97,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.eduhub.rule=Host(`eduhub.crcttec.com.br`)"
       - "traefik.http.routers.eduhub.entrypoints=websecure"
+      - "traefik.http.routers.eduhub.tls=true"
       - "traefik.http.routers.eduhub.tls.certresolver=myresolver"
       - "traefik.http.services.eduhub.loadbalancer.server.port=8000"
     volumes:
@@ -121,6 +123,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.enlace-be.rule=Host(`enlace-api.crcttec.com.br`)"
       - "traefik.http.routers.enlace-be.entrypoints=websecure"
+      - "traefik.http.routers.enlace-be.tls=true"
       - "traefik.http.routers.enlace-be.tls.certresolver=myresolver"
       - "traefik.http.services.enlace-be.loadbalancer.server.port=3000"
     networks:
@@ -141,6 +144,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.enlace-fe.rule=Host(`enlace.crcttec.com.br`)"
       - "traefik.http.routers.enlace-fe.entrypoints=websecure"
+      - "traefik.http.routers.enlace-fe.tls=true"
       - "traefik.http.routers.enlace-fe.tls.certresolver=myresolver"
       - "traefik.http.services.enlace-fe.loadbalancer.server.port=80"
     networks:
@@ -162,6 +166,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.myserver.rule=Host(`myserver.crcttec.com.br`)"
       - "traefik.http.routers.myserver.entrypoints=websecure"
+      - "traefik.http.routers.myserver.tls=true"
       - "traefik.http.routers.myserver.tls.certresolver=myresolver"
       - "traefik.http.services.myserver.loadbalancer.server.port=8000"
     networks:
@@ -187,6 +192,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.rackplus.rule=Host(`rackplus.crcttec.com.br`)"
       - "traefik.http.routers.rackplus.entrypoints=websecure"
+      - "traefik.http.routers.rackplus.tls=true"
       - "traefik.http.routers.rackplus.tls.certresolver=myresolver"
       - "traefik.http.services.rackplus.loadbalancer.server.port=8000"
     networks:
