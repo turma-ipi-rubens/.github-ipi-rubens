@@ -10,6 +10,9 @@ jobs:
   deploy:
     name: Deploy to GCP VM
     runs-on: ubuntu-latest
+    env:
+      SSH_USER: ${{ secrets.SSH_USERNAME || 'ubuntu' }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
 
     steps:
       - name: Checkout Repository
@@ -22,19 +25,19 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       # Copiar arquivos de configuração essenciais para o Servidor via SCP (SSH)
       - name: Copy deployment configurations to server
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p /home/${{ secrets.SSH_USERNAME }}/TCC/"
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 docker-compose.yml init-multiple-databases.sh docker-compose.env ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USERNAME }}/TCC/
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "mkdir -p ~/TCC/"
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 docker-compose.yml init-multiple-databases.sh docker-compose.env $SSH_USER@$SSH_HOST:~/TCC/
 
       # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
       - name: Execute Deploy commands via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd /home/${{ secrets.SSH_USERNAME }}/TCC
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST << 'EOF'
+            cd ~/TCC
             
             # Garantir permissão de execução para o inicializador do banco
             chmod +x init-multiple-databases.sh
