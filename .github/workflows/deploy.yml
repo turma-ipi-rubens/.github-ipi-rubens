@@ -32,17 +32,22 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "mkdir -p ~/TCC/"
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 docker-compose.yml init-multiple-databases.sh docker-compose.env $SSH_USER@$SSH_HOST:~/TCC/
+          # Copiar docker-compose.env para .env para que o docker-compose o carregue automaticamente
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "cp ~/TCC/docker-compose.env ~/TCC/.env"
 
       # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
+      # Usamos a flag -A para encaminhar o SSH-Agent para a VM fazer clone seguro via SSH
       - name: Execute Deploy commands via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST << 'EOF'
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_ed25519
+          ssh -A -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
             cd ~/TCC
             
             # Garantir permissão de execução para o inicializador do banco
             chmod +x init-multiple-databases.sh
             
-            # Configuração/Atualização de cada Repositório do Aluno
+            # Configuração/Atualização de cada Repositório do Aluno na pasta Home (/home/ubuntu/)
             declare -A repos=(
               ["repo-easy-english"]="deploy-gcp-rubens"
               ["repo-edu-hub"]="deploy-gcp-rubens"
@@ -53,22 +58,29 @@ jobs:
 
             for repo in "${!repos[@]}"; do
               branch="${repos[$repo]}"
-              if [ -d "$repo" ]; then
+              target_dir="/home/ubuntu/$repo"
+              if [ -d "$target_dir" ]; then
                 echo "Updating existing repository $repo on branch $branch..."
-                cd "$repo"
+                cd "$target_dir"
                 git fetch origin
                 git checkout "$branch"
                 git pull origin "$branch"
-                cd ..
+                cd - > /dev/null
               else
-                echo "Repository $repo not found on VM. Please clone it manually or via automation first."
+                echo "Repository $repo not found. Cloning from GitHub..."
+                git clone -b "$branch" "git@github.com:turma-ipi-rubens/$repo.git" "$target_dir"
               fi
             done
 
-            # Subir o ambiente Docker Compose atualizado
-            docker-compose down
-            docker-compose up -d --build
+            # Garantir que o usuário está no grupo docker para o futuro
+            if ! groups $USER | grep -q "\bdocker\b"; then
+              sudo usermod -aG docker $USER
+            fi
+
+            # Subir o ambiente Docker Compose atualizado usando sudo (garante permissão ao docker.sock)
+            sudo docker-compose down
+            sudo docker-compose up -d --build
             
             # Limpeza rápida de imagens antigas/inutilizadas
-            docker image prune -f
+            sudo docker image prune -f
           EOF
