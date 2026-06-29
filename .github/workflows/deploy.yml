@@ -48,7 +48,6 @@ jobs:
               ["repo-enlace"]="deploy-gcp-rubens"
               ["repo-myserver"]="deploy-gcp-rubens"
               ["repo-rack-plus"]="deploy-gcp-rubens"
-              ["repo-skillex"]="deploy-gcp-rubens"
             )
 
             for repo in "${!repos[@]}"; do
