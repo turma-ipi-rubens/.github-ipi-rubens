@@ -30,18 +30,19 @@ jobs:
       # Copiar arquivos de configuração essenciais para o Servidor via SCP (SSH)
       - name: Copy deployment configurations to server
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "mkdir -p ~/TCC/"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "mkdir -p ~/TCC/ ~/.ssh"
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 docker-compose.yml init-multiple-databases.sh docker-compose.env $SSH_USER@$SSH_HOST:~/TCC/
+          # Copiar a chave privada para que a VM possa clonar as dependências do GitHub
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST:~/.ssh/id_ed25519
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "chmod 600 ~/.ssh/id_ed25519 && ssh-keyscan -H github.com >> ~/.ssh/known_hosts"
           # Copiar docker-compose.env para .env para que o docker-compose o carregue automaticamente
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST "cp ~/TCC/docker-compose.env ~/TCC/.env"
 
       # SSH para o Servidor, atualizar código dos repositórios e rodar Docker Compose
-      # Usamos a flag -A para encaminhar o SSH-Agent para a VM fazer clone seguro via SSH
       - name: Execute Deploy commands via SSH
         run: |
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_ed25519
-          ssh -A -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST << 'EOF'
+            set -e
             cd ~/TCC
             
             # Garantir permissão de execução para o inicializador do banco
