@@ -44,8 +44,8 @@ resource "google_compute_instance" "vm_instance" {
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2204-lts" # Ubuntu 22.04 LTS
-      size  = 30                                 # Limite máximo de 30GB gratuitos no Free Tier
-      type  = "pd-standard"                      # Disco permanente padrão (standard)
+      size  = 30                                # Limite máximo de 30GB gratuitos no Free Tier
+      type  = "pd-standard"                     # Disco permanente padrão (standard)
     }
   }
 
