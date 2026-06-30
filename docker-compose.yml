@@ -72,6 +72,7 @@ services:
     environment:
       - DATABASE_URL=${EASY_ENGLISH_DB_URL}
       - SECRET_KEY=${EASY_ENGLISH_SECRET_KEY}
+      - ALLOWED_HOSTS=easyenglish.crcttec.com.br,localhost,127.0.0.1
     labels:
       - "traefik.enable=true"
       - 'traefik.http.routers.easyenglish.rule=Host(`easyenglish.crcttec.com.br`)'
@@ -97,6 +98,7 @@ services:
       - DATABASE_URL=${EDUHUB_DB_URL}
       - SECRET_KEY=${EDUHUB_SECRET_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ALLOWED_HOSTS=eduhub.crcttec.com.br,localhost,127.0.0.1
     labels:
       - "traefik.enable=true"
       - 'traefik.http.routers.eduhub.rule=Host(`eduhub.crcttec.com.br`)'
@@ -123,9 +125,10 @@ services:
     environment:
       - DATABASE_URL=${ENLACE_DATABASE_URL}
       - JWT_SECRET=${ENLACE_JWT_SECRET}
+      - CORS_ORIGIN=https://enlace.crcttec.com.br
     labels:
       - "traefik.enable=true"
-      - 'traefik.http.routers.enlace-be.rule=Host(`enlace-api.crcttec.com.br`)'
+      - 'traefik.http.routers.enlace-be.rule=Host(`enlace.crcttec.com.br`) && PathPrefix(`/api`)'
       - "traefik.http.routers.enlace-be.entrypoints=websecure"
       - "traefik.http.routers.enlace-be.tls=true"
       - "traefik.http.routers.enlace-be.tls.certresolver=myresolver"
@@ -145,6 +148,8 @@ services:
     build:
       context: ../repo-enlace/frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://enlace.crcttec.com.br/api
     container_name: tcc-enlace-frontend
     labels:
       - "traefik.enable=true"
@@ -173,6 +178,7 @@ services:
       - DB_PASSWORD=myserver
       - DB_HOST=postgres
       - DB_PORT=5432
+      - ALLOWED_HOSTS=myserver.crcttec.com.br,localhost,127.0.0.1
     labels:
       - "traefik.enable=true"
       - 'traefik.http.routers.myserver.rule=Host(`myserver.crcttec.com.br`)'
@@ -199,6 +205,7 @@ services:
       - SECRET_KEY=${RACK_PLUS_SECRET_KEY}
       - REDIS_HOST=${RACK_PLUS_CHANNEL_LAYERS_REDIS_HOST}
       - REDIS_PORT=${RACK_PLUS_CHANNEL_LAYERS_REDIS_PORT}
+      - ALLOWED_HOSTS=rackplus.crcttec.com.br,localhost,127.0.0.1
     labels:
       - "traefik.enable=true"
       - 'traefik.http.routers.rackplus.rule=Host(`rackplus.crcttec.com.br`)'
