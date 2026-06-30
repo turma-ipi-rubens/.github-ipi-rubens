@@ -54,8 +54,6 @@ jobs:
             declare -A repos=(
               ["repo-easy-english"]="deploy-gcp-rubens"
               ["repo-edu-hub"]="deploy-gcp-rubens"
-              ["repo-enlace"]="deploy-gcp-rubens"
-              ["repo-myserver"]="deploy-gcp-rubens"
               ["repo-rack-plus"]="deploy-gcp-rubens"
             )
 
@@ -101,19 +99,10 @@ jobs:
             sudo docker-compose exec -T edu-hub python manage.py migrate || true
             sudo docker-compose exec -T edu-hub python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
 
-            # 3. MyServer (Django)
-            echo "Running migrations for myserver..."
-            sudo docker-compose exec -T myserver python manage.py migrate || true
-            sudo docker-compose exec -T myserver python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
-
-            # 4. Rack Plus (Django)
+            # 3. Rack Plus (Django)
             echo "Running migrations for rack-plus..."
             sudo docker-compose exec -T rack-plus python manage.py migrate || true
             sudo docker-compose exec -T rack-plus python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
-
-            # 5. Enlace Backend (Node.js/Prisma)
-            echo "Running migrations for enlace-backend..."
-            sudo docker-compose exec -T enlace-backend npx prisma db push --accept-data-loss || true
 
             echo "=== POST-DEPLOY SETUP COMPLETED ==="
 
