@@ -50,6 +50,10 @@ jobs:
             # Garantir permissão de execução para o inicializador do banco
             chmod +x init-multiple-databases.sh
             
+            # Configuração de segurança do Git para evitar erro de propriedade duvidosa (dubious ownership)
+            sudo git config --global --add safe.directory "*" || true
+            git config --global --add safe.directory "*" || true
+
             # Configuração/Atualização de cada Repositório do Aluno na pasta Home (/home/ubuntu/)
             declare -A repos=(
               ["repo-easy-english"]="deploy-gcp-rubens"
@@ -63,15 +67,15 @@ jobs:
               if [ -d "$target_dir" ]; then
                 echo "Updating existing repository $repo on branch $branch..."
                 cd "$target_dir"
-                git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git"
-                git fetch origin
-                git checkout -f "$branch"
-                git reset --hard "origin/$branch"
-                git pull origin "$branch"
+                sudo git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git"
+                sudo git fetch origin
+                sudo git checkout -f "$branch"
+                sudo git reset --hard "origin/$branch"
+                sudo git pull origin "$branch"
                 cd - > /dev/null
               else
                 echo "Repository $repo not found. Cloning from GitHub..."
-                git clone -b "$branch" "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git" "$target_dir"
+                sudo git clone -b "$branch" "https://x-access-token:${GH_PAT}@github.com/turma-ipi-rubens/$repo.git" "$target_dir"
               fi
             done
 
@@ -94,19 +98,19 @@ jobs:
             echo "Running migrations for easy-english..."
             sudo docker-compose exec -T easy-english python manage.py makemigrations || true
             sudo docker-compose exec -T easy-english python manage.py migrate || true
-            sudo docker-compose exec -T easy-english python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
+            sudo docker-compose exec -T easy-english python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
 
             # 2. Edu Hub (Django)
             echo "Running migrations for edu-hub..."
             sudo docker-compose exec -T edu-hub python manage.py makemigrations || true
             sudo docker-compose exec -T edu-hub python manage.py migrate || true
-            sudo docker-compose exec -T edu-hub python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
+            sudo docker-compose exec -T edu-hub python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
 
             # 3. Rack Plus (Django)
             echo "Running migrations for rack-plus..."
             sudo docker-compose exec -T rack-plus python manage.py makemigrations || true
             sudo docker-compose exec -T rack-plus python manage.py migrate || true
-            sudo docker-compose exec -T rack-plus python -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
+            sudo docker-compose exec -T rack-plus python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" || true
 
             echo "=== POST-DEPLOY SETUP COMPLETED ==="
 
