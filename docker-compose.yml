@@ -74,7 +74,7 @@ services:
       - SECRET_KEY=${EASY_ENGLISH_SECRET_KEY}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.easyenglish.rule=Host(\`easyenglish.crcttec.com.br\`)"
+      - 'traefik.http.routers.easyenglish.rule=Host(`easyenglish.crcttec.com.br`)'
       - "traefik.http.routers.easyenglish.entrypoints=websecure"
       - "traefik.http.routers.easyenglish.tls=true"
       - "traefik.http.routers.easyenglish.tls.certresolver=myresolver"
@@ -99,7 +99,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.eduhub.rule=Host(\`eduhub.crcttec.com.br\`)"
+      - 'traefik.http.routers.eduhub.rule=Host(`eduhub.crcttec.com.br`)'
       - "traefik.http.routers.eduhub.entrypoints=websecure"
       - "traefik.http.routers.eduhub.tls=true"
       - "traefik.http.routers.eduhub.tls.certresolver=myresolver"
@@ -125,7 +125,7 @@ services:
       - JWT_SECRET=${ENLACE_JWT_SECRET}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.enlace-be.rule=Host(\`enlace-api.crcttec.com.br\`)"
+      - 'traefik.http.routers.enlace-be.rule=Host(`enlace-api.crcttec.com.br`)'
       - "traefik.http.routers.enlace-be.entrypoints=websecure"
       - "traefik.http.routers.enlace-be.tls=true"
       - "traefik.http.routers.enlace-be.tls.certresolver=myresolver"
@@ -148,7 +148,7 @@ services:
     container_name: tcc-enlace-frontend
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.enlace-fe.rule=Host(\`enlace.crcttec.com.br\`)"
+      - 'traefik.http.routers.enlace-fe.rule=Host(`enlace.crcttec.com.br`)'
       - "traefik.http.routers.enlace-fe.entrypoints=websecure"
       - "traefik.http.routers.enlace-fe.tls=true"
       - "traefik.http.routers.enlace-fe.tls.certresolver=myresolver"
@@ -168,9 +168,14 @@ services:
     environment:
       - DATABASE_URL=${MYSERVER_DB_URL}
       - SECRET_KEY=${MYSERVER_SECRET_KEY}
+      - DB_NAME=myserver
+      - DB_USER=myserver
+      - DB_PASSWORD=myserver
+      - DB_HOST=postgres
+      - DB_PORT=5432
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.myserver.rule=Host(\`myserver.crcttec.com.br\`)"
+      - 'traefik.http.routers.myserver.rule=Host(`myserver.crcttec.com.br`)'
       - "traefik.http.routers.myserver.entrypoints=websecure"
       - "traefik.http.routers.myserver.tls=true"
       - "traefik.http.routers.myserver.tls.certresolver=myresolver"
@@ -196,7 +201,7 @@ services:
       - REDIS_PORT=${RACK_PLUS_CHANNEL_LAYERS_REDIS_PORT}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.rackplus.rule=Host(\`rackplus.crcttec.com.br\`)"
+      - 'traefik.http.routers.rackplus.rule=Host(`rackplus.crcttec.com.br`)'
       - "traefik.http.routers.rackplus.entrypoints=websecure"
       - "traefik.http.routers.rackplus.tls=true"
       - "traefik.http.routers.rackplus.tls.certresolver=myresolver"
